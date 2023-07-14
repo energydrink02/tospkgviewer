@@ -192,7 +192,7 @@ class MainApplication(tk.Frame):
         compress = tk.messagebox.askyesno("Compress Asset", "Do you want to compress the Asset?")
 
         try:
-            self.pkg.assets[tree_tags[0]].Update(open(openfile, "rb").read(), compress)
+            self.pkg.assets[tree_tags[0]].Import(open(openfile, "rb").read(), compress)
             self.pkg.Update()
             self.update_tree()
         except Exception as e:

@@ -42,7 +42,10 @@ class PKGHeader:
             asset.num = index
 
             asset.offset = startoffset
+            asset.Update()
             startoffset += len(asset.data)
+
+            
 
     def Serialize(self):
         bytecode = b""
@@ -81,7 +84,10 @@ class PKGEntry:
 
         file.seek(self.endAsset)
 
-    def Update(self, data, compress):
+    def Update(self):
+        self.data += bytes(Padding(len(self.data), 4))
+
+    def Import(self, data, compress):
         if compress:
             self.isCompressed = 1
             self.uncompressedSize = len(data)
@@ -91,7 +97,6 @@ class PKGEntry:
             self.isCompressed = 0
             self.data = data
             self.compressedSize = self.uncompressedSize = len(self.data)
-        self.data += bytes(Padding(len(self.data), 4) - len(self.data)) 
 
     def getType(self):
         return assettype.get(self.name[-3:], "")
