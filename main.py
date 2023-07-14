@@ -7,8 +7,8 @@ import sys
 import io
 import PKG as PKG
 import traceback
-import texture as texture
-from Helper import convert_size
+import Assets.Texture as texture
+from Helpers.Helper import convert_size
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -104,12 +104,13 @@ class MainApplication(tk.Frame):
 
         self.tools_menu = tk.Menu(self.menu, tearoff=False)
         self.menu.add_cascade(label="Tools", menu=self.tools_menu)
-        self.tools_menu.add_command(label="Export all", command=self.exportAll)
+        self.tools_menu.add_command(label="Export all assets raw", command=self.exportAll)
+        self.tools_menu.add_command(label="Export all textures as *.png", command=lambda: self.exportAll("Texture"))
 
         # Rightclick Menu
         self.rightclick_menu = tk.Menu(self.parent, tearoff=False)
-        self.rightclick_menu.add_command(label="Export", command=self.export)
-        self.rightclick_menu.add_command(label="Replace", command=self.replaceAsset)
+        self.rightclick_menu.add_command(label="Export Raw", command=self.export)
+        self.rightclick_menu.add_command(label="Import", command=self.replaceAsset)
         self.rightclick_menu.add_command(label="Rename", command=self.renameAsset)
         self.rightclick_menu.add_command(label="Delete", background="#FFAAA9", command=self.deleteAsset)
 
@@ -181,6 +182,9 @@ class MainApplication(tk.Frame):
     
     # # # # # # # # # # # # # # # # # # # #
 
+    def getTextureClassByName(self, name):
+        return texture.Texture(io.BytesIO(self.getDataByName(name)))
+
     def loadTexture(self):
         global textureClass
         try:
@@ -206,15 +210,26 @@ class MainApplication(tk.Frame):
 
     def getData(self):
         return self.pkg.assets[tree_tags[0]].getData()
+    
+    def getName(self):
+        return self.pkg.assets[tree_tags[0]].name
+    
+    def getType(self):
+        return self.pkg.assets[tree_tags[0]].getType()
+    
+    def getDataByName(self, name):
+        for asset in self.pkg.assets:
+            if asset.name == name:
+                return asset.getData()
 
     def export(self):
         directory = filedialog.askdirectory()
         if directory == "": return
 
-        with open(directory + "/" + tree_name, "wb") as file:
+        with open(os.path.join(directory, tree_name), "wb") as file:
             file.write(self.getData())
 
-    def exportAll(self):
+    def exportAll(self, assetType=""):
         if self.pkg == None: return
 
         directory = filedialog.askdirectory()
@@ -222,10 +237,15 @@ class MainApplication(tk.Frame):
 
         try:
             for asset in self.pkg.assets:
-                with open(directory + "/" + asset.name, "wb") as file:
-                    file.write(asset.getData())
+                if assetType != "":
+                    if assetType == "Texture" and asset.getType() == "Texture":
+                        self.getTextureClassByName(asset.name).exportTexture(os.path.join(directory, asset.name[:-4] + ".png"))
+                    else:
+                        continue
+                else:
+                    open(os.path.join(directory, asset.name), "wb").write(asset.getData())
         except Exception as e:
-            tk.messagebos.showerror(type(e).__name__, traceback.format_exc())
+            tk.messagebox.showerror(type(e).__name__, traceback.format_exc())
         else:
             tk.messagebox.showinfo("Success!", "All files exported")
 
@@ -255,7 +275,7 @@ class MainApplication(tk.Frame):
         self.pkgAmountEntriesLabel["text"] = f"Entries: {str(self.pkg.amountAssets)}"
 
         for index, asset in enumerate(self.pkg.assets):
-            self.tree.insert(parent="", index="end", iid=index, text=index, values=(asset.name, convert_size(asset.uncompressedSize), convert_size(asset.compressedSize), PKG.assettype.get(asset.name[-3:], " ")), tags=(index))
+            self.tree.insert(parent="", index="end", iid=index, text=index, values=(asset.name, convert_size(asset.uncompressedSize), convert_size(asset.compressedSize), asset.getType()), tags=(index))
             self.tree.tag_configure(index, background="#ffffff")
 
     def openFileDialog(self, types=("*", "*.*")):

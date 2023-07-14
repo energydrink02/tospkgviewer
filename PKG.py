@@ -1,6 +1,6 @@
 import gzip
 import struct
-from Helper import Padding
+from Helpers.Helper import Padding
 
 assettype = {
     "rtf": "Texture",
@@ -91,6 +91,9 @@ class PKGEntry:
             self.data = data
             self.compressedSize = self.uncompressedSize = len(self.data)
         self.data += bytes(Padding(len(self.data), 4) - len(self.data)) 
+
+    def getType(self):
+        return assettype.get(self.name[-3:], "")
 
     def getData(self):
         if self.isCompressed:
