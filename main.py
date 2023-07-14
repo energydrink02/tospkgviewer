@@ -7,7 +7,10 @@ import sys
 import io
 import PKG as PKG
 import traceback
+
 import Assets.Texture as texture
+import Assets.bms as bms
+
 from Helpers.Helper import convert_size
 
 def resource_path(relative_path):
@@ -59,7 +62,7 @@ class MainApplication(tk.Frame):
 
         # PKG Information Frame
         self.pkgInfoFrame = tk.LabelFrame(self.parent, text="PKG Information")
-        self.pkgInfoFrame.place(x=700, y=570, height=100, width=180)
+        self.pkgInfoFrame.place(x=705, y=570, height=100, width=180)
 
         self.pkgSizeDecompressedLabel = tk.Label(self.pkgInfoFrame)
         self.pkgSizeDecompressedLabel.pack(anchor="w")
@@ -69,6 +72,14 @@ class MainApplication(tk.Frame):
 
         self.pkgAmountEntriesLabel = tk.Label(self.pkgInfoFrame)
         self.pkgAmountEntriesLabel.pack(anchor="w")
+
+        #Edit Data Frame
+        self.editDataFrame = tk.LabelFrame(self.parent, text="Edit/Export Data")
+        self.editDataFrame.place(x=705, y=260, height=100, width=180)
+
+        self.exportDataButton = tk.Button(self.editDataFrame, text="None", command=self.exportProcessedAsset)
+        self.exportDataButton.place(x=15, y=5, width=150)
+        self.exportDataButton.config(state="disabled")
 
         # Texture Preview Frame
         self.textureMainFrame = tk.LabelFrame(self.parent, text="Texture")
@@ -140,10 +151,19 @@ class MainApplication(tk.Frame):
         except:
             return
 
-        if tree_name.endswith("rtf"): # Texture
+        if self.getType() == "Texture":
             self.loadTexture()
         else:
             self.noneTexture()
+
+        if any([x in tree_name for x in ["bms"]]):
+            self.exportDataButton.config(state="active")
+            if self.getType() == "BMS":
+                self.exportDataButton.configure(text="Export binary BMS as text")
+        else:
+            self.exportDataButton.configure(text="None")
+            self.exportDataButton.config(state="disabled")
+
         return
 
     # # # # # # # # # # # # # # # # # # # #
@@ -208,11 +228,26 @@ class MainApplication(tk.Frame):
 
     # # # # # # # # # # # # # # # # # # # #
 
+    def exportProcessedAsset(self):
+        directory = filedialog.asksaveasfilename(initialfile=tree_name, defaultextension=".txt", filetypes=[("TXT", "*.txt")])
+        if directory == "": return
+        
+        try:
+            if self.getType() == "BMS":
+                open(directory, "w").write(bms.BMS_Header(io.BytesIO(self.getData())).ToString())
+
+        except Exception as e:
+            tk.messagebox.showerror(type(e).__name__, traceback.format_exc())
+        else:
+            tk.messagebox.showinfo("Success!", f"{self.getType()} extracted.")
+
+
+
+
+    # # # # # # # # # # # # # # # # # # # # 
+
     def getData(self):
         return self.pkg.assets[tree_tags[0]].getData()
-    
-    def getName(self):
-        return self.pkg.assets[tree_tags[0]].name
     
     def getType(self):
         return self.pkg.assets[tree_tags[0]].getType()

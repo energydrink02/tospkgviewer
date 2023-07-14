@@ -8,7 +8,8 @@ assettype = {
     "wav": "Audio",
     "ent": "Entity",
     "cmh": "Collision",
-    "mnf": "Manifest"
+    "mnf": "Manifest",
+    "bms": "BMS"
 }
 
 
